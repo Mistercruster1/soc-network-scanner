@@ -1,0 +1,35 @@
+{
+  "scan_info": {
+    "target": "172.18.0.2",
+    "ports_scanned": "21,22,23,25,53,80,110,139,143,443,445,993,995,1433,3306,3389,5900,8080,8443",
+    "start_time": "2026-05-11 21:27:50",
+    "end_time": "2026-05-11 21:28:02",
+    "duration_seconds": 11,
+    "hosts_found": 1,
+    "total_open_ports": 1
+  },
+  "hosts": [
+    {
+      "ip": "172.18.0.2",
+      "hostname": "15891275307c",
+      "state": "up",
+      "open_ports": [
+        {
+          "port": 8080,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "http-proxy",
+          "product": "N/A",
+          "risk": "medio",
+          "risk_description": "Puerto web alternativo — verificar aplicación"
+        }
+      ],
+      "risk_summary": {
+        "alto": 0,
+        "medio": 1,
+        "bajo": 0,
+        "info": 0
+      }
+    }
+  ]
+}

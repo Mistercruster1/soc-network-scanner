@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Network Scanner</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+       background:#0f1117; color:#e2e8f0; min-height:100vh; }
+nav { background:#1e2433; border-bottom:1px solid #2d3748; padding:.9rem 2rem;
+      display:flex; align-items:center; justify-content:space-between; }
+nav .brand { font-size:1rem; font-weight:600; color:#60a5fa; }
+nav a { color:#94a3b8; text-decoration:none; font-size:.875rem; margin-left:1.5rem; }
+nav a:hover { color:#e2e8f0; }
+.container { max-width:800px; margin:3rem auto; padding:0 1.5rem; }
+h1 { font-size:1.6rem; font-weight:600; margin-bottom:.5rem; }
+.sub { color:#64748b; font-size:.9rem; margin-bottom:2.5rem; }
+.card { background:#1e2433; border:1px solid #2d3748; border-radius:12px; padding:2rem; }
+label { display:block; font-size:.8rem; color:#94a3b8; text-transform:uppercase;
+        letter-spacing:.05em; margin-bottom:.5rem; }
+input { width:100%; background:#0f1117; border:1px solid #2d3748; border-radius:8px;
+        padding:.75rem 1rem; color:#e2e8f0; font-size:.95rem; outline:none;
+        transition:border .2s; }
+input:focus { border-color:#3b82f6; }
+.form-group { margin-bottom:1.5rem; }
+.hint { font-size:.75rem; color:#475569; margin-top:.4rem; }
+.btn { width:100%; padding:.85rem; background:#3b82f6; color:#fff; border:none;
+       border-radius:8px; font-size:.95rem; font-weight:500; cursor:pointer;
+       transition:background .2s; }
+.btn:hover { background:#2563eb; }
+.btn:disabled { background:#1e3a5f; color:#475569; cursor:not-allowed; }
+.status-box { margin-top:1.5rem; padding:1.25rem; border-radius:8px;
+              background:#0f1117; border:1px solid #2d3748; display:none; }
+.status-box.show { display:block; }
+.status-title { font-size:.85rem; color:#94a3b8; margin-bottom:.75rem; }
+.progress { height:4px; background:#1e2433; border-radius:2px; overflow:hidden; margin-bottom:1rem; }
+.progress-bar { height:100%; background:#3b82f6; border-radius:2px;
+                animation:prog 2s ease-in-out infinite; width:60%; }
+@keyframes prog { 0%{margin-left:-60%} 100%{margin-left:100%} }
+.metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; }
+.metric { background:#1e2433; border-radius:8px; padding:.75rem; text-align:center; }
+.metric .val { font-size:1.5rem; font-weight:600; }
+.metric .lbl { font-size:.7rem; color:#64748b; text-transform:uppercase; margin-top:2px; }
+.m-blue { color:#60a5fa; }
+.m-red  { color:#f87171; }
+.m-yellow { color:#fbbf24; }
+.actions { display:flex; gap:.75rem; margin-top:1rem; }
+.btn-sm { flex:1; padding:.6rem; border-radius:6px; font-size:.8rem; font-weight:500;
+          cursor:pointer; border:1px solid #2d3748; background:#1e2433; color:#94a3b8;
+          text-decoration:none; text-align:center; transition:all .2s; }
+.btn-sm:hover { background:#252d3d; color:#e2e8f0; }
+.btn-sm.primary { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+.btn-sm.primary:hover { background:#2563eb; }
+.error-box { background:#2d1515; border:1px solid #7f1d1d; border-radius:8px;
+             padding:1rem; color:#f87171; font-size:.85rem; margin-top:1rem; display:none; }
+.error-box.show { display:block; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">SOC Network Scanner</span>
+  <div>
+    <a href="/">Escanear</a>
+    <a href="/history">Historial</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Reconocimiento de red</h1>
+  <p class="sub">Escanea hosts o rangos de red y detecta puertos y servicios expuestos.</p>
+
+  <div class="card">
+    <div class="form-group">
+      <label>Target</label>
+      <input type="text" id="target" placeholder="192.168.1.1 o 192.168.1.0/24" autocomplete="off">
+      <p class="hint">IP individual, rango CIDR o hostname</p>
+    </div>
+    <div class="form-group">
+      <label>Puertos (opcional)</label>
+      <input type="text" id="ports" placeholder="Dejar vacío para usar puertos SOC por defecto">
+      <p class="hint">Ej: 22,80,443,3389 — por defecto se usan los 18 puertos más relevantes en SOC</p>
+    </div>
+    <button class="btn" id="btnScan" onclick="startScan()">Iniciar escaneo</button>
+
+    <div class="status-box" id="statusBox">
+      <p class="status-title" id="statusText">Iniciando escaneo...</p>
+      <div class="progress" id="progressBar"><div class="progress-bar"></div></div>
+      <div class="metrics" id="metrics" style="display:none;">
+        <div class="metric">
+          <div class="val m-blue" id="mHosts">0</div>
+          <div class="lbl">Hosts</div>
+        </div>
+        <div class="metric">
+          <div class="val m-yellow" id="mPorts">0</div>
+          <div class="lbl">Puertos abiertos</div>
+        </div>
+        <div class="metric">
+          <div class="val m-red" id="mHigh">0</div>
+          <div class="lbl">Alto riesgo</div>
+        </div>
+      </div>
+      <div class="actions" id="actions" style="display:none;">
+        <a class="btn-sm primary" id="btnReport" href="#" target="_blank">Ver reporte HTML</a>
+        <a class="btn-sm" id="btnJson" href="#" download>Descargar JSON</a>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+</div>
+
+<script>
+let pollInterval = null;
+
+async function startScan() {
+  const target = document.getElementById('target').value.trim();
+  const ports  = document.getElementById('ports').value.trim();
+
+  if (!target) {
+    showError('Debes ingresar un target.');
+    return;
+  }
+
+  document.getElementById('btnScan').disabled = true;
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('statusBox').classList.add('show');
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('metrics').style.display = 'none';
+  document.getElementById('actions').style.display = 'none';
+  document.getElementById('statusText').textContent = 'Iniciando escaneo...';
+
+  try {
+    const res  = await fetch('/api/scan', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ target, ports })
+    });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    pollStatus(data.scan_id);
+  } catch(e) {
+    showError('Error al conectar con el servidor.');
+    document.getElementById('btnScan').disabled = false;
+  }
+}
+
+function pollStatus(scanId) {
+  pollInterval = setInterval(async () => {
+    try {
+      const res  = await fetch(`/api/scan/${scanId}/status`);
+      const data = await res.json();
+
+      if (data.status === 'done') {
+        clearInterval(pollInterval);
+        document.getElementById('statusText').textContent = 'Escaneo completado';
+        document.getElementById('progressBar').style.display = 'none';
+        document.getElementById('metrics').style.display = 'grid';
+        document.getElementById('actions').style.display = 'flex';
+        document.getElementById('mHosts').textContent = data.hosts_found;
+        document.getElementById('mPorts').textContent = data.open_ports;
+        document.getElementById('mHigh').textContent  = data.high_risk;
+        document.getElementById('btnReport').href = `/report/${scanId}`;
+        document.getElementById('btnJson').href  = `/download/${scanId}/json`;
+        document.getElementById('btnScan').disabled = false;
+      } else if (data.status === 'error') {
+        clearInterval(pollInterval);
+        showError(data.error || 'Error durante el escaneo.');
+        document.getElementById('statusBox').classList.remove('show');
+        document.getElementById('btnScan').disabled = false;
+      } else {
+        document.getElementById('statusText').textContent = 'Escaneando... esto puede tomar unos segundos';
+      }
+    } catch(e) { clearInterval(pollInterval); }
+  }, 2000);
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.classList.add('show');
+  document.getElementById('btnScan').disabled = false;
+}
+</script>
+</body>
+</html>

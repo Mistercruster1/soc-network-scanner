@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historial — SOC Network Scanner</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+       background:#0f1117; color:#e2e8f0; min-height:100vh; }
+nav { background:#1e2433; border-bottom:1px solid #2d3748; padding:.9rem 2rem;
+      display:flex; align-items:center; justify-content:space-between; }
+nav .brand { font-size:1rem; font-weight:600; color:#60a5fa; }
+nav a { color:#94a3b8; text-decoration:none; font-size:.875rem; margin-left:1.5rem; }
+nav a:hover { color:#e2e8f0; }
+.container { max-width:1000px; margin:2.5rem auto; padding:0 1.5rem; }
+h1 { font-size:1.4rem; font-weight:600; margin-bottom:.4rem; }
+.sub { color:#64748b; font-size:.875rem; margin-bottom:2rem; }
+.empty { text-align:center; padding:4rem; color:#475569; }
+table { width:100%; border-collapse:collapse; background:#1e2433;
+        border-radius:12px; overflow:hidden; border:1px solid #2d3748; }
+th { padding:.75rem 1rem; text-align:left; font-size:.75rem; text-transform:uppercase;
+     color:#64748b; background:#161c2a; border-bottom:1px solid #2d3748; }
+td { padding:.85rem 1rem; font-size:.875rem; border-bottom:1px solid #1a2030; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#252d3d; }
+.target { font-family:monospace; color:#a78bfa; }
+.status-done  { color:#34d399; font-size:.75rem; font-weight:600; }
+.status-running { color:#fbbf24; font-size:.75rem; font-weight:600; }
+.status-error { color:#f87171; font-size:.75rem; font-weight:600; }
+.risk-high { color:#f87171; font-weight:600; }
+.actions { display:flex; gap:.5rem; }
+.btn-xs { padding:4px 10px; border-radius:5px; font-size:.75rem; font-weight:500;
+          text-decoration:none; border:1px solid #2d3748; background:#0f1117;
+          color:#94a3b8; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn-xs:hover { background:#1e2433; color:#e2e8f0; }
+.btn-xs.blue { background:#1e3a5f; color:#60a5fa; border-color:#1e3a5f; }
+.btn-xs.blue:hover { background:#2563eb; color:#fff; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">SOC Network Scanner</span>
+  <div>
+    <a href="/">Escanear</a>
+    <a href="/history">Historial</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Historial de escaneos</h1>
+  <p class="sub">Últimos 50 escaneos realizados.</p>
+
+  {% if scans %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Target</th>
+        <th>Fecha</th>
+        <th>Hosts</th>
+        <th>Puertos</th>
+        <th>Alto riesgo</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in scans %}
+      <tr>
+        <td style="color:#475569;">{{ s['id'] }}</td>
+        <td class="target">{{ s['target'] }}</td>
+        <td style="color:#64748b;font-size:.8rem;">{{ s['started_at'] }}</td>
+        <td>{{ s['hosts_found'] }}</td>
+        <td>{{ s['open_ports'] }}</td>
+        <td class="{% if s['high_risk'] > 0 %}risk-high{% endif %}">
+          {{ s['high_risk'] }}
+        </td>
+        <td>
+          {% if s['status'] == 'done' %}
+            <span class="status-done">COMPLETO</span>
+          {% elif s['status'] == 'running' %}
+            <span class="status-running">CORRIENDO</span>
+          {% else %}
+            <span class="status-error">ERROR</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="actions">
+            {% if s['report_html'] %}
+            <a class="btn-xs blue" href="/report/{{ s['id'] }}" target="_blank">HTML</a>
+            <a class="btn-xs" href="/download/{{ s['id'] }}/json" download>JSON</a>
+            {% else %}
+            <span style="color:#475569;font-size:.75rem;">Sin reporte</span>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <p style="font-size:1rem;margin-bottom:.5rem;">Sin escaneos todavía</p>
+    <p style="font-size:.875rem;"><a href="/" style="color:#3b82f6;">Realiza tu primer escaneo</a></p>
+  </div>
+  {% endif %}
+</div>
+
+</body>
+</html>
