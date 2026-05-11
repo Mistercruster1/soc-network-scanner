@@ -98,8 +98,7 @@ def download_report(scan_id, fmt):
 def start_scan():
     data    = request.get_json()
     target  = data.get("target", "").strip()
-    ports   = data.get("ports", SOC_PORTS).strip()
-
+    ports = data.get("ports", "").strip() or SOC_PORTS
     if not target:
         return jsonify({"error": "Debes ingresar un target"}), 400
 

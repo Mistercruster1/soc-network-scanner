@@ -1,0 +1,12 @@
+{
+  "scan_info": {
+    "target": "172.18.0.2",
+    "ports_scanned": "",
+    "start_time": "2026-05-11 22:15:03",
+    "end_time": "2026-05-11 22:15:03",
+    "duration_seconds": 0,
+    "hosts_found": 0,
+    "total_open_ports": 0
+  },
+  "hosts": []
+}
